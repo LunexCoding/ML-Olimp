@@ -9,8 +9,8 @@ from log import logger
 
 
 FILE_SUFFIX = ".json"
-DATA_DIRECTORY = Path("data")
-log = logger.getLogger("parser")
+DATA_DIRECTORY = Path("../data")
+log = logger.getLogger(__name__)
 
 
 class Parser:
@@ -28,7 +28,7 @@ class Parser:
 
     def _getCompanies(self):
         companiesBlock = self._soup.find('div', {'class': 'tm-companies'})
-        log.debug("Received a block with all enterprises")
+        log.debug("Получен блок со всеми компаниями")
         return companiesBlock.find_all('div', {'class': 'tm-companies__item tm-companies__item_inlined'})
 
     def _addCompany(self, companyData):
@@ -38,13 +38,13 @@ class Parser:
         path = DATA_DIRECTORY / "summary_of_companies"
         with path.with_suffix(FILE_SUFFIX).open('w', encoding='utf-8') as file:
             json.dump(self._data, file, indent=4, ensure_ascii=False)
-        log.debug("Data writing was successful")
+        log.debug("Запись прошла успешно!")
 
     def _generateNextPageUrl(self, page):
         if page < self._lastPage:
             url = self._url.split('/')
             url[-2] = f"page{page + 1}"
-            log.debug(f"Received a link to the following page <{'/'.join(url)}>")
+            log.debug(f"олучена ссылка на следующую страницу page <{'/'.join(url)}>")
             return "/".join(url)
 
     def _getInfoAboutCompany(self, browser, companyID):
@@ -65,7 +65,7 @@ class Parser:
             companyHubs = [hub.text for hub in companyHubsBlock.find_elements(By.CLASS_NAME, "tm-companies__hubs-item")]
         except:
             companyHubs = []
-            log.warning(f"Company <{companyName}> has no hubs")
+            log.warning(f"У компании <{companyName}> нет Хабов")
         browser.get(companyProfile)
         industriesBlock = browser.find_element(By.CLASS_NAME, "tm-company-profile__categories")
         industries = [industry.text for industry in industriesBlock.find_elements(By.CLASS_NAME, "tm-company-profile__categories-wrapper")]
@@ -85,13 +85,13 @@ class Parser:
         }
 
     def start(self):
-        log.debug("Parser run")
+        log.debug("Запуск parserCompany")
         self._generateSoup()
         self._browser.get(self._url)
         self._lastPage = int([el.text for el in self._browser.find_elements(By.CLASS_NAME, "tm-pagination__page")][-1])
         log.info(f"Last page number: <{self._lastPage}>")
         for page in range(1, self._lastPage + 1):
-            log.debug(f"Jump to page number <{page}>")
+            log.debug(f"Переход на страницу <{page}>")
             try:
                 for companyID, company in enumerate(self._getCompanies(), start=1):
                     self._addCompany(self._getInfoAboutCompany(self._browser, companyID))
@@ -99,13 +99,12 @@ class Parser:
                 self._browser.get(self._url)
                 self._browser.find_element(By.XPATH, "//a[@id='pagination-next-page']").click()
                 self._url = self._generateNextPageUrl(page)
-                time.sleep(2)
             except Exception as e:
                 if page > self._lastPage:
-                    log.error(f"Page number <{page}> does not exist!")
+                    log.error(f"Страницы с номером <{page}> не существует!")
                 self._browser.close()
                 break
-        log.debug("Parser completed")
+        log.debug("Парсер завершил работу успешно!")
 
 
 if __name__ == "__main__":
