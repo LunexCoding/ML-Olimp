@@ -16,13 +16,17 @@ log = logger.getLogger(__name__)
 
 
 class ArticleParser:
-    def __init__(self, url=None):
+    def __init__(self, url=None, browser=None, save=False):
         self._url = url
         self._companyArticles = []
         self._companyName = None
         self._lastPage = None
-        self._browser = webdriver.Chrome()
-        self._browser.maximize_window()
+        if browser is not None:
+            self._browser = browser
+        else:
+            self._browser = webdriver.Chrome()
+            self._browser.maximize_window()
+        self._save = save
 
     def _writeFileCompanyArticles(self):
         path = DATA_DIRECTORY / "articles" / self._companyName.translate(str.maketrans('', '', string.punctuation))
@@ -76,7 +80,7 @@ class ArticleParser:
         self._browser.get(self._url)
         self._companyName = self._browser.find_element(By.XPATH, selectorsConfig.article["companyCardInfo"]).find_element(By.TAG_NAME, "a").text
         self._fingPagination()
-        for page in range(1, 2 + 1):
+        for page in range(1, self._lastPage + 1):
             log.debug(f"Переход на страницу с номером <{page}>")
             articles = self._getArticles()
             for articleID, article in enumerate(articles, start=1):
@@ -90,6 +94,8 @@ class ArticleParser:
             self._browser.get(self._url)
         log.debug(f"У компании {self._companyName}: {len(self._companyArticles)} статей")
         log.debug("Парсер завершил работу успешно!")
+        if self._save:
+            self._writeFileCompanyArticles()
 
     @property
     def companyArticles(self):

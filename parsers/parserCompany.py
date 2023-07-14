@@ -1,35 +1,48 @@
 import json
-import time
-import requests
 from pathlib import Path
+
+import requests
 from bs4 import BeautifulSoup as bs
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+
 from log import logger
+from selectorsConfig import selectorsConfig
 
 
+DATA_DIRECTORY = Path("data")
 FILE_SUFFIX = ".json"
-DATA_DIRECTORY = Path("../data")
 log = logger.getLogger(__name__)
 
 
-class Parser:
-    def __init__(self, url=None):
+class CompanyParser:
+    def __init__(self, url=None, browser=None, save=False):
         self._url = url
         self._soup = None
         self._data = {}
         self._lastPage = None
-        self._browser = webdriver.Chrome()
-        self._browser.maximize_window()
+        if browser is not None:
+            self._browser = browser
+        else:
+            self._browser = webdriver.Chrome()
+            self._browser.maximize_window()
+        self._save = save
 
     def _generateSoup(self):
         page = requests.get(self._url)
         self._soup = bs(page.text, 'html.parser')
 
+    def _fingPagination(self):
+        try:
+            self._lastPage = int([el.text for el in self._browser.find_elements(By.CLASS_NAME, "tm-pagination__page")][-1])
+        except:
+            self._lastPage = 1
+        log.info(f"Последняя страница с номером: <{self._lastPage}>")
+
     def _getCompanies(self):
-        companiesBlock = self._soup.find('div', {'class': 'tm-companies'})
+        companiesBlock = self._soup.find('div', {'class': selectorsConfig.companiesPage["companiesBlock"]})
         log.debug("Получен блок со всеми компаниями")
-        return companiesBlock.find_all('div', {'class': 'tm-companies__item tm-companies__item_inlined'})
+        return companiesBlock.find_all('div', {'class': selectorsConfig.companiesPage["companies"]})
 
     def _addCompany(self, companyData):
         self._data[companyData.pop('Name')] = companyData
@@ -44,35 +57,44 @@ class Parser:
         if page < self._lastPage:
             url = self._url.split('/')
             url[-2] = f"page{page + 1}"
-            log.debug(f"олучена ссылка на следующую страницу page <{'/'.join(url)}>")
+            log.debug(f"Получена ссылка на следующую страницу page <{'/'.join(url)}>")
             return "/".join(url)
 
-    def _getInfoAboutCompany(self, browser, companyID):
-        companyShortInfoBlock = browser.find_element(By.XPATH, f"//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[{companyID}]/div[1]/div[1]/div[1]")
-        companyName = companyShortInfoBlock.find_element(By.CLASS_NAME, "tm-company-snippet__title").text
-        log.debug(f"Parsing a company with a name <{companyName}> with ID<{companyID}>")
-        companyDescription = companyShortInfoBlock.find_element(By.CLASS_NAME, "tm-company-snippet__description").text
-        companyProfile = companyShortInfoBlock.find_element(By.CLASS_NAME, "tm-company-snippet__title").get_attribute("href")
-        companyCountersBlock = browser.find_element(By.XPATH, f"//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[{companyID}]/div[2]")
-        companyRating = float(companyCountersBlock.find_element(By.XPATH, f"/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[{companyID}]/div[2]/span[1]").text)
-        companySubscribers = companyCountersBlock.find_element(By.XPATH, f"/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[{companyID}]/div[2]/span[2]").text
+    def _getCompanySubscribers(self, companyCountersBlock, companyID):
+        companySubscribers = companyCountersBlock.find_element(By.XPATH, selectorsConfig.getXpathByParameters("company", "subscribers", companyID)).text
         if "K" in companySubscribers:
-            companySubscribers = float(companySubscribers.replace("K", "")) * 1000
-        else:
-            companySubscribers = float(companySubscribers)
+            return float(companySubscribers.replace("K", "")) * 1000
+        return float(companySubscribers)
+
+    def _getCompanyHubs(self, browser, companyID):
         try:
-            companyHubsBlock = browser.find_element(By.XPATH, f"//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[{companyID}]/div[1]/div[2]")
-            companyHubs = [hub.text for hub in companyHubsBlock.find_elements(By.CLASS_NAME, "tm-companies__hubs-item")]
+            companyHubsBlock = browser.find_element(By.XPATH, selectorsConfig.getXpathByParameters("company", "hubsBlock", companyID))
+            return [hub.text for hub in companyHubsBlock.find_elements(By.CLASS_NAME, selectorsConfig.company["hubs"])]
         except:
-            companyHubs = []
+            return None
+
+    def _getCompanyAbout(self, browser):
+        try:
+            return browser.find_element(By.XPATH, selectorsConfig.company["about"][0]).text
+        except:
+            return browser.find_element(By.XPATH, selectorsConfig.company["about"][1]).text
+
+    def _getInfoAboutCompany(self, browser, companyID):
+        companyShortInfoBlock = browser.find_element(By.XPATH, selectorsConfig.getXpathByParameters("company", "shortInfoBlock", companyID))
+        companyName = companyShortInfoBlock.find_element(By.CLASS_NAME, selectorsConfig.company["name"]).text
+        log.debug(f"Получение сведений о компании <{companyName}> с ID<{companyID}>...")
+        companyDescription = companyShortInfoBlock.find_element(By.CLASS_NAME, selectorsConfig.company["description"]).text
+        companyProfile = companyShortInfoBlock.find_element(By.CLASS_NAME, selectorsConfig.company["profile"]).get_attribute("href")
+        companyCountersBlock = browser.find_element(By.XPATH, selectorsConfig.getXpathByParameters("company", "countersBlock", companyID))
+        companyRating = float(companyCountersBlock.find_element(By.XPATH, selectorsConfig.getXpathByParameters("company", "rating", companyID)).text)
+        companySubscribers = self._getCompanySubscribers(companyCountersBlock, companyID)
+        companyHubs = self._getCompanyHubs(browser, companyID)
+        if companyHubs is None:
             log.warning(f"У компании <{companyName}> нет Хабов")
         browser.get(companyProfile)
-        industriesBlock = browser.find_element(By.CLASS_NAME, "tm-company-profile__categories")
-        industries = [industry.text for industry in industriesBlock.find_elements(By.CLASS_NAME, "tm-company-profile__categories-wrapper")]
-        try:
-            companyAbout = browser.find_element(By.XPATH, "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/section[1]/div[1]/div[1]/dl[2]/dd[1]/span[1]").text
-        except:
-            companyAbout = browser.find_element(By.XPATH, "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/section[1]/div[1]/div[1]/dl[3]/dd[1]/span[1]").text
+        industriesBlock = browser.find_element(By.CLASS_NAME, selectorsConfig.company["industriesBlock"])
+        industries = [industry.text for industry in industriesBlock.find_elements(By.CLASS_NAME, selectorsConfig.company["industries"])]
+        companyAbout = self._getCompanyAbout(browser)
         return {
             "Name": companyName,
             "Description": companyDescription,
@@ -88,26 +110,26 @@ class Parser:
         log.debug("Запуск parserCompany")
         self._generateSoup()
         self._browser.get(self._url)
-        self._lastPage = int([el.text for el in self._browser.find_elements(By.CLASS_NAME, "tm-pagination__page")][-1])
-        log.info(f"Last page number: <{self._lastPage}>")
+        self._fingPagination()
+        log.info(f"Последняя страница с номером: <{self._lastPage}>")
         for page in range(1, self._lastPage + 1):
             log.debug(f"Переход на страницу <{page}>")
-            try:
-                for companyID, company in enumerate(self._getCompanies(), start=1):
-                    self._addCompany(self._getInfoAboutCompany(self._browser, companyID))
-                    self._browser.get(self._url)
+            for companyID, company in enumerate(self._getCompanies(), start=1):
+                self._addCompany(self._getInfoAboutCompany(self._browser, companyID))
                 self._browser.get(self._url)
-                self._browser.find_element(By.XPATH, "//a[@id='pagination-next-page']").click()
-                self._url = self._generateNextPageUrl(page)
-            except Exception as e:
-                if page > self._lastPage:
-                    log.error(f"Страницы с номером <{page}> не существует!")
-                self._browser.close()
-                break
+            self._browser.get(self._url)
+            self._browser.find_element(By.XPATH, "//a[@id='pagination-next-page']").click()
+            self._url = self._generateNextPageUrl(page)
+            if page > self._lastPage:
+                log.error(f"Страницы с номером <{page}> не существует!")
+            self._browser.close()
+            break
         log.debug("Парсер завершил работу успешно!")
+        if self._save:
+            self._writeFileSummaryOfCompanies()
 
 
 if __name__ == "__main__":
-    parser = Parser("https://habr.com/ru/companies/page1/")
+    parser = CompanyParser("https://habr.com/ru/companies/page1/")
     parser.start()
     parser._writeFileSummaryOfCompanies()

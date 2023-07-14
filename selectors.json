@@ -21,7 +21,8 @@
         "countersBlock": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[2]",
         "rating": "/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[2]/span[1]",
         "subscribers": "/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[2]/span[2]",
-        "hubsBlock": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[1]/div[2]"
+        "hubsBlock": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[1]/div[2]",
+        "hubs": "tm-companies__hubs-item"
     },
     "blog": {
         "articles": "tm-articles-list__item"
