@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
 from log import logger
+from const import ELEMENT_NOT_FOUND
 from selectorsConfig import selectorsConfig
 
 
@@ -28,7 +29,7 @@ class Parser:
     def fingPagination(self):
         try:
             self._lastPage = int([el.text for el in self._browser.find_elements(By.CLASS_NAME, selectorsConfig.page["pagination"])][-1])
-        except:
+        except NoSuchElementException:
             self._lastPage = 1
 
     def generateNextPageUrl(self, page):
@@ -53,39 +54,34 @@ class Parser:
             return True
         return False
 
-    def findElement(self, selector, parent=None):
+    def findElement(self, locator, selector, parent=None):
+        return self.__findElement(locator, selector, parent, all=False)
+
+    def findElements(self, locator, selector, parent=None):
+        return self.__findElement(locator, selector, parent, all=True)
+
+    def __findElement(self, locator, selector, parent=None, all=False):
         if self.__checkSelectorIsIterator(selector):
-            self.__findElementByIterSelector(selector, parent=None)
+            return self.__findElementByIterSelector(locator, selector, parent)
         else:
-            element = self._browser
-            if parent is not None:
-                element = parent
-            try:
-                return element.find_element(selector)
-            except NoSuchElementException:
-                return False
-
-    def findElement(self, selector, parent=None):
-        self.__findElement(selector, parent, all=False)
-
-    def findElements(self, selector, parent=None):
-        self.__findElement(selector, parent, all=True)
-
-    def __findElement(self, selector, parent=None, all=False):
-        if self.__checkSelectorIsIterator(selector):
-            self.__findElementByIterSelector(selector, parent=None)
-        else:
-            element = self._browser
-            if parent is not None:
-                element = parent
+            element = parent if parent is not None else self._browser
             try:
                 if all:
-                    return element.find_element(selector)
-                return element.find_elements(selector)
+                    return element.find_elements(locator, selector)
+                return element.find_element(locator, selector)
             except NoSuchElementException:
                 return False
 
-    def __findElementByIterSelector(self, selector, parent=None):
+    def __findElementByIterSelector(self, locator, selector, parent=None):
+        element = parent if parent is not None else self._browser
+        for xpath in selector:
+            try:
+                needSelector = element.find_element(locator, xpath)
+                if needSelector:
+                    return needSelector
+            except NoSuchElementException:
+                pass
+        return ELEMENT_NOT_FOUND
 
     @staticmethod
     def saveData(path, data):
