@@ -2,25 +2,25 @@ import time
 from pathlib import Path
 
 from selenium.webdriver.common.by import By
-from selenium.common import NoSuchElementException
 
 from log import logger
 from const import (
+    DATA_DIRECTORY,
+    FILE_SUFFIX,
     ELEMENT_NOT_FOUND,
     COMPANY_NAME_NOT_FOUND,
     COMPANY_DESCRIPTION_NOT_FOUND,
     COMPANY_PROFILE_NOT_FOUND,
     COMPANY_RATING_NOT_FOUND,
     COMPANY_SUBSCRIBERS_NOT_FOUND,
-    COMPANY_HUBS_NOT_FOUND
+    COMPANY_HUBS_NOT_FOUND,
+    COMPANY_ABOUT_NOT_FOUND
 )
 from selectorsConfig import selectorsConfig
 from parsers.parser import Parser
 
 
-DATA_DIRECTORY = Path("data")
-FILE_SUFFIX = ".json"
-log = logger.getLogger(__name__)
+log = logger.getLogger("parsers/parserCompany.py")
 
 
 class CompanyParser(Parser):
@@ -34,11 +34,10 @@ class CompanyParser(Parser):
         count = 0
         companyID = 1
         while True:
-            try:
-                self.findElement(By.XPATH, selectorsConfig.getXpathByParameters("companiesPage", "companies", companyID))
+            if self.findElement(By.XPATH, selectorsConfig.getXpathByParameters("companiesPage", "company", companyID)):
                 count += 1
                 companyID += 1
-            except NoSuchElementException:
+            else:
                 return count
 
     def _addCompany(self, companyData):
@@ -90,24 +89,25 @@ class CompanyParser(Parser):
         return companyIndustries if companyIndustries else ELEMENT_NOT_FOUND
 
     def _getCompanyAbout(self):
-        xpaths = selectorsConfig.company["about"]
-        for xpath in xpaths:
-            try:
-                return self._browser.find_element(By.XPATH, xpath).text
-            except NoSuchElementException:
-                pass
+        companyAbout = self.findElement(By.XPATH, selectorsConfig.company["about"])
+        return companyAbout.text if companyAbout else COMPANY_ABOUT_NOT_FOUND
 
     def _getInfoAboutCompany(self, companyID):
         companyShortInfoBlock = self._getCompanyShortInfoBlock(companyID)
         if companyShortInfoBlock:
             companyName = self._getCompanyName(companyShortInfoBlock)
-            log.debug(f"Получение сведений о компании <{companyName}> с ID<{companyID}/{len(self._companies) + 1}>...")
+            log.info(f"Получение сведений о компании <{companyName}> с ID<{companyID}/{len(self._companies) + 1}>...")
             companyDescription = self._getCompanyDescription(companyShortInfoBlock)
             companyProfile = self._getCompanyProfile(companyShortInfoBlock)
-            companyRating = self._getCompanyRating(companyCountersBlock, companyID)
-            companySubscribers = self._getCompanySubscribers(companyCountersBlock, companyID)
+            companyCountersBlock = self._getCompanyCountersBlock(companyID)
+            if companyCountersBlock:
+                companyRating = self._getCompanyRating(companyCountersBlock, companyID)
+                companySubscribers = self._getCompanySubscribers(companyCountersBlock, companyID)
+            else:
+                companyRating = COMPANY_RATING_NOT_FOUND
+                companySubscribers = COMPANY_SUBSCRIBERS_NOT_FOUND
             companyHubs = self._getCompanyHubs(companyID)
-            self._browser.get(companyProfile)
+            self.openPage(companyProfile)
             companyIndustries = self._getCompanyIndustries()
             companyAbout = self._getCompanyAbout()
             return {
@@ -126,16 +126,14 @@ class CompanyParser(Parser):
 
     def start(self, save=False):
         log.debug("Запуск parserCompany")
-        self._browser.get(self._url)
+        self.openPage(self._url)
         self.fingPagination()
         log.info(f"Последняя страница с номером: <{self._lastPage}>")
-        for page in range(1, self._lastPage + 1):
-            log.debug(f"Переход на страницу с номером <{page}>")
+        for page in range(16, self._lastPage + 1):
             for companyID in range(1, self._getCountCompanies() + 1):
                 self._addCompany(self._getInfoAboutCompany(companyID))
-                self._browser.get(self._url)
+                self.openPage(self._url)
             self.checkNextPage(page)
-            log.debug(f"Переход на страницу <{page + 1}>")
             time.sleep(2)
         log.info(f"Всего компаний проанализировано: {len(self._companies)}")
         log.debug("Парсер завершил работу успешно!")
@@ -145,5 +143,5 @@ class CompanyParser(Parser):
 
 
 if __name__ == "__main__":
-    parser = CompanyParser("https://habr.com/ru/companies/page1/")
+    parser = CompanyParser("https://habr.com/ru/companies/page16/")
     parser.start(save=True)

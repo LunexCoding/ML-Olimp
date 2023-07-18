@@ -6,6 +6,8 @@ from selenium.webdriver.common.by import By
 
 from log import logger
 from const import (
+    DATA_DIRECTORY,
+    FILE_SUFFIX,
     ARTICLE_TITLE_NOT_FOUND,
     ARTICLE_DESCRIPTION_NOT_FOUND,
     ARTICLE_PUBLICATION_DATE_NOT_FOUND,
@@ -15,9 +17,7 @@ from selectorsConfig import selectorsConfig
 from parsers.parser import Parser
 
 
-DATA_DIRECTORY = Path("data")
-FILE_SUFFIX = ".json"
-log = logger.getLogger(__name__)
+log = logger.getLogger("parsers/parserArticles.py")
 
 
 class ArticleParser(Parser):
@@ -25,7 +25,6 @@ class ArticleParser(Parser):
         super().__init__(url, browser)
         self._companyName = companyName
         self._companyArticles = []
-
 
     def _getArticles(self):
         return self.findElements(By.CLASS_NAME, selectorsConfig.blog["articles"])
@@ -38,7 +37,7 @@ class ArticleParser(Parser):
         date = self.__getDate(article)
         rating = self.__getRating(article, articleID)
         description = self.__getDescription(article, articleID)
-        log.debug(f"Статья <{articleID}/{len(self._companyArticles) + 1}>: {title[:50]}...")
+        log.info(f"Статья <{articleID}/{len(self._companyArticles) + 1}>: {title[:50]}...")
         return {
             "title": title,
             "description": description,
@@ -69,13 +68,12 @@ class ArticleParser(Parser):
 
 
     def start(self, save=False):
-        log.debug("Старт ArticleParser")
-        self._browser.get(self._url)
+        log.debug("Запуск ArticleParser")
+        self.openPage(self._url)
         self.fingPagination()
         self.__getCompanyName()
         log.info(f"Последняя страница с номером: <{self._lastPage}>")
         for page in range(148, self._lastPage + 1):
-            log.debug(f"Переход на страницу с номером <{page}>")
             articles = self._getArticles()
             if articles:
                 for articleID, article in enumerate(articles, start=1):

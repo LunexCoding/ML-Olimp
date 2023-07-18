@@ -11,7 +11,7 @@ from const import ELEMENT_NOT_FOUND
 from selectorsConfig import selectorsConfig
 
 
-log = logger.getLogger(__name__)
+log = logger.getLogger("parsers/parser.py")
 
 
 class Parser:
@@ -26,6 +26,10 @@ class Parser:
             options.add_argument("--disable-extensions")
             self._browser = webdriver.Chrome(options=options)
             self._browser.maximize_window()
+
+    def openPage(self, url):
+        self._browser.get(url)
+        log.debug(f"Переход на страницу <{url}>")
 
     def fingPagination(self):
         try:
@@ -46,7 +50,7 @@ class Parser:
         else:
             self._url = self.generateNextPageUrl(page)
             try:
-                self._browser.get(self._url)
+                self.openPage(self._url)
             except TimeoutException:
                 self._browser.refresh()
 
@@ -96,4 +100,3 @@ class Parser:
 
 if __name__ == "__main__":
     parser = Parser()
-    time.sleep(5)
