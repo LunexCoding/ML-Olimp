@@ -76,9 +76,13 @@ class ArticleParser(Parser):
         log.info(f"Последняя страница с номером: <{self._lastPage}>")
         for page in range(148, self._lastPage + 1):
             log.debug(f"Переход на страницу с номером <{page}>")
-            for articleID, article in enumerate(self._getArticles(), start=1):
-                self._addAritcle(self._getInfoAboutArticle(article, articleID))
-            self.checkNextPage(page)
+            articles = self._getArticles()
+            if articles:
+                for articleID, article in enumerate(articles, start=1):
+                    self._addAritcle(self._getInfoAboutArticle(article, articleID))
+                self.checkNextPage(page)
+            else:
+                log.error(f"Не удалось получить статьи на странице <{page}>")
         log.debug(f"У компании {self._companyName}: {len(self._companyArticles)} статей")
         log.debug("Парсер завершил работу успешно!")
         if save:

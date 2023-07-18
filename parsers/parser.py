@@ -22,7 +22,8 @@ class Parser:
             self._browser = browser
         else:
             options = Options()
-            options.add_argument('--disable-gpu')
+            options.add_argument("--disable-gpu")
+            options.add_argument("--disable-extensions")
             self._browser = webdriver.Chrome(options=options)
             self._browser.maximize_window()
 
@@ -48,6 +49,9 @@ class Parser:
                 self._browser.get(self._url)
             except TimeoutException:
                 self._browser.refresh()
+
+    def refresh(self):
+        self._browser.refresh()
 
     def __checkSelectorIsIterator(self, selector):
         if isinstance(selector, list):
