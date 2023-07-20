@@ -4,9 +4,11 @@ from pathlib import Path
 from selenium.webdriver.common.by import By
 
 from log import logger
-from const import (
+from consts import (
     DATA_DIRECTORY,
-    FILE_SUFFIX,
+    FILE_SUFFIX
+)
+from parsers.consts import (
     ELEMENT_NOT_FOUND,
     COMPANY_NAME_NOT_FOUND,
     COMPANY_DESCRIPTION_NOT_FOUND,
@@ -18,17 +20,20 @@ from const import (
 )
 from selectorsConfig import selectorsConfig
 from parsers.parser import Parser
+from parsers.parserArticles import ArticleParser
 
 
 log = logger.getLogger("parsers/parserCompany.py")
 
 
 class CompanyParser(Parser):
-    def __init__(self, url=None, browser=None):
+    def __init__(self, url, browser=None):
         super().__init__(url, browser)
         self._url = url
         self._companies = {}
         self._lastPage = None
+        self._companyName = None
+        self._companyProfile = None
 
     def _getCountCompanies(self):
         count = 0
@@ -92,13 +97,16 @@ class CompanyParser(Parser):
         companyAbout = self.findElement(By.XPATH, selectorsConfig.company["about"])
         return companyAbout.text if companyAbout else COMPANY_ABOUT_NOT_FOUND
 
+    def _generateCompanyBlogUrl(self):
+        return self._companyProfile.replace("profile", "articles")
+
     def _getInfoAboutCompany(self, companyID):
         companyShortInfoBlock = self._getCompanyShortInfoBlock(companyID)
         if companyShortInfoBlock:
-            companyName = self._getCompanyName(companyShortInfoBlock)
-            log.info(f"Получение сведений о компании <{companyName}> с ID<{companyID}/{len(self._companies) + 1}>...")
+            self._companyName = self._getCompanyName(companyShortInfoBlock)
+            log.info(f"Получение сведений о компании <{self._companyName}> с ID<{companyID}/{len(self._companies) + 1}>...")
             companyDescription = self._getCompanyDescription(companyShortInfoBlock)
-            companyProfile = self._getCompanyProfile(companyShortInfoBlock)
+            self._companyProfile = self._getCompanyProfile(companyShortInfoBlock)
             companyCountersBlock = self._getCompanyCountersBlock(companyID)
             if companyCountersBlock:
                 companyRating = self._getCompanyRating(companyCountersBlock, companyID)
@@ -107,24 +115,24 @@ class CompanyParser(Parser):
                 companyRating = COMPANY_RATING_NOT_FOUND
                 companySubscribers = COMPANY_SUBSCRIBERS_NOT_FOUND
             companyHubs = self._getCompanyHubs(companyID)
-            self.openPage(companyProfile)
+            self.openPage(self._companyProfile)
             companyIndustries = self._getCompanyIndustries()
             companyAbout = self._getCompanyAbout()
             return {
-                "Name": companyName,
+                "Name": self._companyName,
                 "Description": companyDescription,
                 "About": companyAbout,
                 "Industries": companyIndustries,
                 "Rating": companyRating,
                 "Subscribers": companySubscribers,
                 "Hubs": companyHubs,
-                "Profile": companyProfile
+                "Profile": self._companyProfile
             }
         else:
             log.error(f"{COMPANY_NAME_NOT_FOUND} с ID<{companyID}/{len(self._companies) + 1}>")
 
 
-    def start(self, save=False):
+    def start(self, articles=False, save=False):
         log.debug("Запуск parserCompany")
         self.openPage(self._url)
         self.fingPagination()
@@ -132,6 +140,11 @@ class CompanyParser(Parser):
         for page in range(16, self._lastPage + 1):
             for companyID in range(1, self._getCountCompanies() + 1):
                 self._addCompany(self._getInfoAboutCompany(companyID))
+                if articles:
+                    companyBlog = self._generateCompanyBlogUrl()
+                    articleParser = ArticleParser(companyBlog, self._companyName, self.browser)
+                    articles = articleParser.start(save=True)
+                    self._companies[self._companyName]["Articles"] = articles
                 self.openPage(self._url)
             self.checkNextPage(page)
             time.sleep(2)
@@ -144,4 +157,4 @@ class CompanyParser(Parser):
 
 if __name__ == "__main__":
     parser = CompanyParser("https://habr.com/ru/companies/page16/")
-    parser.start(save=True)
+    parser.start(articles=True, save=True)
