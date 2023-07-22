@@ -149,3 +149,11 @@ class FileSystem:
     @staticmethod
     def exists(path):
         return Path(path).exists()
+
+    @staticmethod
+    def createArchive(filename, path, newPath=None):
+        path = Path(path)
+        shutil.make_archive(filename, "zip", path)
+        if newPath is not None:
+            path = filename + ".zip"
+            shutil.move(path, newPath)

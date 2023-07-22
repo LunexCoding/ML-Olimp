@@ -1,3 +1,4 @@
+import time
 import string
 from pathlib import Path
 
@@ -67,7 +68,6 @@ class ArticleParser(Parser):
         date = self.findElement(By.TAG_NAME, selectorsConfig.article["date"], article).get_attribute("title")
         return date if date else ARTICLE_PUBLICATION_DATE_NOT_FOUND
 
-
     def start(self, save=False):
         log.debug("Запуск ArticleParser")
         self.openPage(self._url)
@@ -79,7 +79,8 @@ class ArticleParser(Parser):
             if articles:
                 for articleID, article in enumerate(articles, start=1):
                     self._addAritcle(self._getInfoAboutArticle(article, articleID))
-                self.checkNextPage(page)
+                self.openNextPage(page)
+                time.sleep(2)
             else:
                 log.error(f"Не удалось получить статьи на странице <{page}>")
         log.info(f"У компании {self._companyName}: {len(self._companyArticles)} статей")
@@ -95,6 +96,6 @@ class ArticleParser(Parser):
 
 
 if __name__ == "__main__":
-    parser = ArticleParser(url="https://habr.com/ru/companies/ruvds/articles/page148/")
+    parser = ArticleParser(url="https://habr.com/ru/companies/ruvds/articles/page2/")
     parser.start(save=True)
 

@@ -10,6 +10,7 @@ from consts import (
 )
 from parsers.consts import (
     ELEMENT_NOT_FOUND,
+    INVALID_COMPANY_INFO,
     COMPANY_NAME_NOT_FOUND,
     COMPANY_DESCRIPTION_NOT_FOUND,
     COMPANY_PROFILE_NOT_FOUND,
@@ -36,14 +37,8 @@ class CompanyParser(Parser):
         self._companyProfile = None
 
     def _getCountCompanies(self):
-        count = 0
-        companyID = 1
-        while True:
-            if self.findElement(By.XPATH, selectorsConfig.getXpathByParameters("companiesPage", "company", companyID)):
-                count += 1
-                companyID += 1
-            else:
-                return count
+        countCompanies = self.findElements(By.CLASS_NAME, selectorsConfig.companiesPage["company"])
+        return len(countCompanies) if countCompanies else countCompanies
 
     def _addCompany(self, companyData):
         self._companies[companyData.pop('Name')] = companyData
@@ -98,38 +93,38 @@ class CompanyParser(Parser):
         return companyAbout.text if companyAbout else COMPANY_ABOUT_NOT_FOUND
 
     def _generateCompanyBlogUrl(self):
-        return self._companyProfile.replace("profile", "articles")
+        return f'{self._companyProfile.replace("profile", "articles")}page1/'
 
     def _getInfoAboutCompany(self, companyID):
         companyShortInfoBlock = self._getCompanyShortInfoBlock(companyID)
-        if companyShortInfoBlock:
-            self._companyName = self._getCompanyName(companyShortInfoBlock)
-            log.info(f"Получение сведений о компании <{self._companyName}> с ID<{companyID}/{len(self._companies) + 1}>...")
-            companyDescription = self._getCompanyDescription(companyShortInfoBlock)
-            self._companyProfile = self._getCompanyProfile(companyShortInfoBlock)
-            companyCountersBlock = self._getCompanyCountersBlock(companyID)
-            if companyCountersBlock:
-                companyRating = self._getCompanyRating(companyCountersBlock, companyID)
-                companySubscribers = self._getCompanySubscribers(companyCountersBlock, companyID)
-            else:
-                companyRating = COMPANY_RATING_NOT_FOUND
-                companySubscribers = COMPANY_SUBSCRIBERS_NOT_FOUND
-            companyHubs = self._getCompanyHubs(companyID)
-            self.openPage(self._companyProfile)
-            companyIndustries = self._getCompanyIndustries()
-            companyAbout = self._getCompanyAbout()
-            return {
-                "Name": self._companyName,
-                "Description": companyDescription,
-                "About": companyAbout,
-                "Industries": companyIndustries,
-                "Rating": companyRating,
-                "Subscribers": companySubscribers,
-                "Hubs": companyHubs,
-                "Profile": self._companyProfile
-            }
-        else:
+        if companyShortInfoBlock is None:
             log.error(f"{COMPANY_NAME_NOT_FOUND} с ID<{companyID}/{len(self._companies) + 1}>")
+            return INVALID_COMPANY_INFO
+        self._companyName = self._getCompanyName(companyShortInfoBlock)
+        log.info(f"Получение сведений о компании <{self._companyName}> с ID<{companyID}/{len(self._companies) + 1}>...")
+        companyDescription = self._getCompanyDescription(companyShortInfoBlock)
+        self._companyProfile = self._getCompanyProfile(companyShortInfoBlock)
+        companyCountersBlock = self._getCompanyCountersBlock(companyID)
+        if companyCountersBlock:
+            companyRating = self._getCompanyRating(companyCountersBlock, companyID)
+            companySubscribers = self._getCompanySubscribers(companyCountersBlock, companyID)
+        else:
+            companyRating = COMPANY_RATING_NOT_FOUND
+            companySubscribers = COMPANY_SUBSCRIBERS_NOT_FOUND
+        companyHubs = self._getCompanyHubs(companyID)
+        self.openPage(self._companyProfile)
+        companyIndustries = self._getCompanyIndustries()
+        companyAbout = self._getCompanyAbout()
+        return {
+            "Name": self._companyName,
+            "Description": companyDescription,
+            "About": companyAbout,
+            "Industries": companyIndustries,
+            "Rating": companyRating,
+            "Subscribers": companySubscribers,
+            "Hubs": companyHubs,
+            "Profile": self._companyProfile
+        }
 
 
     def start(self, articles=False, save=False):
@@ -137,16 +132,20 @@ class CompanyParser(Parser):
         self.openPage(self._url)
         self.fingPagination()
         log.info(f"Последняя страница с номером: <{self._lastPage}>")
-        for page in range(16, self._lastPage + 1):
-            for companyID in range(1, self._getCountCompanies() + 1):
-                self._addCompany(self._getInfoAboutCompany(companyID))
-                if articles:
-                    companyBlog = self._generateCompanyBlogUrl()
-                    articleParser = ArticleParser(companyBlog, self._companyName, self.browser)
-                    articles = articleParser.start(save=True)
-                    self._companies[self._companyName]["Articles"] = articles
-                self.openPage(self._url)
-            self.checkNextPage(page)
+        for page in range(17, self._lastPage + 1):
+            countCompanies = self._getCountCompanies()
+            if countCompanies:
+                for companyID in range(1, countCompanies + 1):
+                    companyInfo = self._getInfoAboutCompany(companyID)
+                    if companyInfo:
+                        self._addCompany(companyInfo)
+                        if articles:
+                            companyBlog = self._generateCompanyBlogUrl()
+                            articleParser = ArticleParser(companyBlog, self._companyName, self.browser)
+                            companyArticles = articleParser.start(save=True)
+                            self._companies[self._companyName]["Articles"] = companyArticles
+                        self.openPage(self._url)
+            self.openNextPage(page)
             time.sleep(2)
         log.info(f"Всего компаний проанализировано: {len(self._companies)}")
         log.debug("Парсер завершил работу успешно!")
@@ -156,5 +155,5 @@ class CompanyParser(Parser):
 
 
 if __name__ == "__main__":
-    parser = CompanyParser("https://habr.com/ru/companies/page16/")
+    parser = CompanyParser("https://habr.com/ru/companies/page17/")
     parser.start(articles=True, save=True)

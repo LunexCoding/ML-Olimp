@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-DATA_DIRECTORY = Path("data")
+DATA_DIRECTORY = Path("../data")
 ARTICLES_DIRECTORY = Path(DATA_DIRECTORY / "articles")
 WORDCLOUDS_DIRECTORY = Path(DATA_DIRECTORY / "WordClouds")
 PATHS_TO_CREATE_DIRECTORIES = [

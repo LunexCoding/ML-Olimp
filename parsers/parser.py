@@ -53,7 +53,7 @@ class Parser:
             log.debug(f"Получена ссылка на следующую страницу page <{'/'.join(url)}>")
             return "/".join(url)
 
-    def checkNextPage(self, page):
+    def openNextPage(self, page):
         if page != self._lastPage:
             self._url = self.generateNextPageUrl(page)
             try:
@@ -71,9 +71,7 @@ class Parser:
         return self.__findElement(locator, selector, parent, all=True)
 
     def __checkSelectorIsIterator(self, selector):
-        if isinstance(selector, list):
-            return True
-        return False
+        return isinstance(selector, list)
 
     def __findElement(self, locator, selector, parent=None, all=False):
         if self.__checkSelectorIsIterator(selector):
@@ -85,7 +83,7 @@ class Parser:
                     return element.find_elements(locator, selector)
                 return element.find_element(locator, selector)
             except NoSuchElementException:
-                return False
+                return ELEMENT_NOT_FOUND
 
     def __findElementByIterSelector(self, locator, selector, parent=None):
         element = parent if parent is not None else self._browser

@@ -4,7 +4,7 @@
         "nextPage": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2]/a[1]/*[1]"
     },
     "companiesPage": {
-        "company": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]"
+        "company": "tm-companies__company-wrapper"
     },
     "company": {
         "name": "tm-company-snippet__title",
