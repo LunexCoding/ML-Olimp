@@ -1,4 +1,3 @@
-import time
 from pathlib import Path
 
 from selenium.webdriver.common.by import By
@@ -146,7 +145,6 @@ class CompanyParser(Parser):
                             self._companies[self._companyName]["Articles"] = companyArticles
                         self.openPage(self._url)
             self.openNextPage(page)
-            time.sleep(2)
         log.info(f"Всего компаний проанализировано: {len(self._companies)}")
         log.debug("Парсер завершил работу успешно!")
         if save:

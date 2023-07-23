@@ -18,7 +18,9 @@ if __name__ == "__main__":
 
     parser = CompanyParser("https://habr.com/ru/companies/page1/")
     parser.start(articles=True, save=True)
-    log.debug(f"Затраченное время: <{round((time.time() - startTime) / 60, 2)} минут>")
+    #log.debug(f"Затраченное время: <{round((time.time() - startTime) / 60, 2)} минут>")
+    log.debug(f"Затраченное время: <{(time.time() - startTime)} минут>")
+    log.debug(f"sumDuration: <{parser.sumDuration}>")
 
     FileSystem.createArchive("data", DATA_DIRECTORY, f"{DATA_DIRECTORY}.zip")
     emailSender.sendEmail(

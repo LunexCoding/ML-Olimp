@@ -1,4 +1,3 @@
-import time
 import string
 from pathlib import Path
 
@@ -80,7 +79,6 @@ class ArticleParser(Parser):
                 for articleID, article in enumerate(articles, start=1):
                     self._addAritcle(self._getInfoAboutArticle(article, articleID))
                 self.openNextPage(page)
-                time.sleep(2)
             else:
                 log.error(f"Не удалось получить статьи на странице <{page}>")
         log.info(f"У компании {self._companyName}: {len(self._companyArticles)} статей")
