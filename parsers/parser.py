@@ -1,5 +1,4 @@
 import json
-import time
 
 from selenium import webdriver
 from selenium.common import TimeoutException, NoSuchElementException
@@ -18,7 +17,6 @@ class Parser:
     def __init__(self, url, browser=None):
         self._url = url
         self._lastPage = 1
-        self._sumDuration = 0
         if browser is not None:
             self._browser = browser
         else:
@@ -39,11 +37,8 @@ class Parser:
             self._browser.maximize_window()
 
     def openPage(self, url):
-        start = time.time()
         self._browser.get(url)
-        duration = time.time() - start
-        log.debug(f"Переход на страницу <{url}>; (<{duration}> секунд)")
-        self._sumDuration += duration
+        log.debug(f"Переход на страницу <{url}>")
 
     def fingPagination(self):
         try:
@@ -115,6 +110,3 @@ class Parser:
     def browser(self):
         return self._browser
 
-    @property
-    def sumDuration(self):
-        return self._sumDuration
