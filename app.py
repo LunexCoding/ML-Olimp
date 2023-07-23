@@ -16,7 +16,7 @@ if __name__ == "__main__":
     for path in PATHS_TO_CREATE_DIRECTORIES:
         FileSystem.makeDir(path, recreate=True)
 
-    parser = CompanyParser("https://habr.com/ru/companies/page17/")
+    parser = CompanyParser("https://habr.com/ru/companies/page1/")
     parser.start(articles=True, save=True)
     log.debug(f"Затраченное время: <{round((time.time() - startTime) / 60, 2)} минут>")
 

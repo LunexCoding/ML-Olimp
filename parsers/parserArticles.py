@@ -96,6 +96,6 @@ class ArticleParser(Parser):
 
 
 if __name__ == "__main__":
-    parser = ArticleParser(url="https://habr.com/ru/companies/ruvds/articles/page2/")
+    parser = ArticleParser(url="https://habr.com/ru/companies/ruvds/articles/page1/")
     parser.start(save=True)
 

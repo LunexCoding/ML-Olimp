@@ -132,7 +132,7 @@ class CompanyParser(Parser):
         self.openPage(self._url)
         self.fingPagination()
         log.info(f"Последняя страница с номером: <{self._lastPage}>")
-        for page in range(17, self._lastPage + 1):
+        for page in range(1, self._lastPage + 1):
             countCompanies = self._getCountCompanies()
             if countCompanies:
                 for companyID in range(1, countCompanies + 1):
@@ -155,5 +155,5 @@ class CompanyParser(Parser):
 
 
 if __name__ == "__main__":
-    parser = CompanyParser("https://habr.com/ru/companies/page17/")
+    parser = CompanyParser("https://habr.com/ru/companies/page1/")
     parser.start(articles=True, save=True)
