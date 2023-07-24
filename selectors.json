@@ -1,0 +1,42 @@
+{
+    "page": {
+        "pagination": "tm-pagination__page",
+        "nextPage": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2]/a[1]/*[1]"
+    },
+    "companiesPage": {
+        "company": "tm-companies__company-wrapper"
+    },
+    "company": {
+        "name": "tm-company-snippet__title",
+        "description": "tm-company-snippet__description",
+        "profile": "tm-company-snippet__title",
+        "industriesBlock": "tm-company-profile__categories",
+        "industries": "tm-company-profile__categories-wrapper",
+        "about": [
+            "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/section[1]/div[1]/div[1]/dl[2]/dd[1]/span[1]",
+            "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/section[1]/div[1]/div[1]/dl[3]/dd[1]/span[1]"
+        ],
+        "shortInfoBlock": [
+            "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[1]/div[1]/div[1]",
+            "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[1]/div[1]"
+        ],
+        "countersBlock": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[2]",
+        "rating": "/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[2]/span[1]",
+        "subscribers": "/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[2]/span[2]",
+        "hubsBlock": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]/div[2]/div[companyID]/div[1]/div[2]",
+        "hubs": "tm-companies__hubs-item"
+    },
+    "blog": {
+        "articles": "tm-articles-list__item"
+    },
+    "article": {
+        "companyCardInfo": "//body/div[@id='app']/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/section[1]/div[1]/div[1]/div[2]",
+        "title": "tm-title__link",
+        "date": "time",
+        "rating": "/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/article[articleID]/div[2]/div[1]/span[1]",
+        "description": [
+            "/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/article[articleID]/div[1]/div[5]/div[1]/div[1]/div[1]",
+            "/html[1]/body[1]/div[1]/div[1]/div[2]/main[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/article[articleID]/div[1]/div[4]/div[1]/div[1]/div[1]"
+        ]
+    }
+}
